@@ -7,6 +7,10 @@ Smart baby monitor — turn two smartphones into a baby monitoring system.
 
 Audio streams peer-to-peer via WebRTC. The server only handles the initial handshake.
 
+<p align="center">
+  <img src="docs/screenshots/home-screen.jpeg" alt="Baby Monitor — Home Screen" width="280" />
+</p>
+
 ## How it works
 
 ```
