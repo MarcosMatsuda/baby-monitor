@@ -22,7 +22,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm audit --audit-level=high
+      - run: pnpm audit --audit-level=critical
 
   lint:
     name: Lint
