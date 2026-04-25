@@ -1,5 +1,9 @@
 import type { IAudioCaptureRepository } from '../../domain/repositories/i-audio-capture.repository';
-import { AUDIO_CONSTRAINTS, ANALYSER_FFT_SIZE } from '@baby-monitor/webrtc-config';
+import {
+  AUDIO_CONSTRAINTS,
+  MEDIA_CONSTRAINTS,
+  ANALYSER_FFT_SIZE,
+} from '@baby-monitor/webrtc-config';
 
 export class AudioCaptureRepository implements IAudioCaptureRepository {
   private audioContext: AudioContext | null = null;
@@ -10,6 +14,10 @@ export class AudioCaptureRepository implements IAudioCaptureRepository {
   async requestMicrophone(): Promise<MediaStream> {
     const stream = await navigator.mediaDevices.getUserMedia(AUDIO_CONSTRAINTS);
     return stream;
+  }
+
+  async requestAudioVideo(): Promise<MediaStream> {
+    return navigator.mediaDevices.getUserMedia(MEDIA_CONSTRAINTS);
   }
 
   startAnalyser(stream: MediaStream): void {

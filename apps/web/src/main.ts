@@ -88,10 +88,22 @@ class BabyStationApp {
   }
 
   private async setupMicrophone(): Promise<void> {
-    const stream = await this.audioCapture.requestMicrophone();
+    const stream = await this.requestMediaWithFallback();
     this.audioCapture.startAnalyser(stream);
     this.audioCapture.startKeepAlive();
     this.webrtc.addAudioTrack(stream);
+    if (stream.getVideoTracks().length > 0) {
+      this.webrtc.addVideoTrack(stream);
+    }
+  }
+
+  private async requestMediaWithFallback(): Promise<MediaStream> {
+    try {
+      return await this.audioCapture.requestAudioVideo();
+    } catch {
+      // Camera denied or unavailable — fall back to audio-only.
+      return this.audioCapture.requestMicrophone();
+    }
   }
 
   private wireSignaling(): void {
@@ -99,6 +111,11 @@ class BabyStationApp {
       if (data.role === 'baby') {
         this.updateState('connecting');
         this.webrtc.createDataChannel();
+        this.webrtc.onDataChannelMessage = (msg) => {
+          if (msg.type === 'video-toggle') {
+            this.webrtc.setVideoEnabled(msg.enabled);
+          }
+        };
         const offer = await this.webrtc.createOffer();
         this.signaling.sendSignal(offer);
         this.startDbStream();
