@@ -67,7 +67,8 @@ export interface SignalDto {
 export type DataChannelMessage =
   | DbLevelMessage
   | StatusMessage
-  | PingMessage;
+  | PingMessage
+  | VideoToggleMessage;
 
 export interface DbLevelMessage {
   readonly type: 'db';
@@ -84,6 +85,13 @@ export interface StatusMessage {
 
 export interface PingMessage {
   readonly type: 'ping';
+  readonly ts: number;
+}
+
+// Parent → baby: turn the video track on/off without renegotiating SDP.
+export interface VideoToggleMessage {
+  readonly type: 'video-toggle';
+  readonly enabled: boolean;
   readonly ts: number;
 }
 
@@ -129,6 +137,7 @@ export interface ISignalingRepository {
 export interface IWebRtcRepository {
   createPeerConnection(): void;
   addAudioTrack(stream: MediaStream): void;
+  addVideoTrack(stream: MediaStream): void;
   createOffer(): Promise<string>;
   createAnswer(remoteSdp: string): Promise<string>;
   setRemoteDescription(sdp: string, type: 'offer' | 'answer'): Promise<void>;
