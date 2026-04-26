@@ -11,6 +11,7 @@ import {
   type BatterySnapshot,
 } from './infrastructure/battery/battery-monitor.repository';
 import { WakeLockRepository } from './infrastructure/screen/wake-lock.repository';
+import { LullabyPlayerRepository } from './infrastructure/lullaby/lullaby-player.repository';
 import { BabyStationUi } from './presentation/components/baby-station.ui';
 import { AudioLevel } from './domain/entities/audio-level.entity';
 import { Connection } from './domain/entities/connection.entity';
@@ -33,6 +34,7 @@ class BabyStationApp {
   private readonly connection = new Connection();
   private readonly battery = new BatteryMonitorRepository();
   private readonly wakeLock = new WakeLockRepository();
+  private readonly lullaby = new LullabyPlayerRepository();
 
   private dbInterval: ReturnType<typeof setInterval> | null = null;
   private statusInterval: ReturnType<typeof setInterval> | null = null;
@@ -157,6 +159,12 @@ class BabyStationApp {
             // back into the stream.
             this.webrtc.setMicEnabled(!msg.talking);
           }
+          if (msg.type === 'play-lullaby') {
+            this.lullaby.play(msg.track);
+          }
+          if (msg.type === 'stop-lullaby') {
+            this.lullaby.stop();
+          }
         };
         this.webrtc.onTrack = (stream) => {
           this.attachParentAudio(stream);
@@ -182,6 +190,7 @@ class BabyStationApp {
       this.updateState('disconnected');
       this.stopDbStream();
       this.stopStatusStream();
+      this.lullaby.stop();
       this.wakeLock.release().catch(() => {});
     });
 
@@ -264,6 +273,7 @@ class BabyStationApp {
       this.audioCapture.stopKeepAlive();
       this.audioCapture.stopAnalyser();
       this.detachParentAudio();
+      this.lullaby.dispose();
       this.wakeLock.release().catch(() => {});
       this.webrtc.close();
       this.signaling.disconnect();
