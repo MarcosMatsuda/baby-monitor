@@ -69,7 +69,11 @@ export type DataChannelMessage =
   | StatusMessage
   | PingMessage
   | VideoToggleMessage
-  | TalkStateMessage;
+  | TalkStateMessage
+  | PlayLullabyMessage
+  | StopLullabyMessage;
+
+export type LullabyTrack = 'white-noise' | 'heartbeat';
 
 export interface DbLevelMessage {
   readonly type: 'db';
@@ -101,6 +105,21 @@ export interface VideoToggleMessage {
 export interface TalkStateMessage {
   readonly type: 'talk-state';
   readonly talking: boolean;
+  readonly ts: number;
+}
+
+// Parent → baby: play one of the synthesized soothing tracks on the
+// baby phone speaker. The baby station owns the synthesis; the parent
+// only chooses which preset.
+export interface PlayLullabyMessage {
+  readonly type: 'play-lullaby';
+  readonly track: LullabyTrack;
+  readonly ts: number;
+}
+
+// Parent → baby: stop any currently playing lullaby track.
+export interface StopLullabyMessage {
+  readonly type: 'stop-lullaby';
   readonly ts: number;
 }
 
