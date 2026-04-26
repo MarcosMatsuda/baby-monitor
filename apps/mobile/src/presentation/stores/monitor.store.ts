@@ -7,10 +7,14 @@ interface IMonitorStoreState {
   alertState: AlertState;
   lastNoiseAt: number | null;
   readings: number[];
+  babyBattery: number | null;
+  babyCharging: boolean;
+  babyStatusAt: number | null;
 
   pushReading: (db: number) => void;
   setThreshold: (threshold: number) => void;
   setAlertState: (state: AlertState) => void;
+  setBabyStatus: (battery: number, charging: boolean) => void;
   reset: () => void;
 }
 
@@ -22,6 +26,9 @@ const useMonitorStoreBase = create<IMonitorStoreState>((set) => ({
   alertState: 'idle',
   lastNoiseAt: null,
   readings: [],
+  babyBattery: null,
+  babyCharging: false,
+  babyStatusAt: null,
 
   pushReading: (db) =>
     set((prev) => {
@@ -39,6 +46,9 @@ const useMonitorStoreBase = create<IMonitorStoreState>((set) => ({
 
   setAlertState: (alertState) => set({ alertState }),
 
+  setBabyStatus: (battery, charging) =>
+    set({ babyBattery: battery, babyCharging: charging, babyStatusAt: Date.now() }),
+
   reset: () =>
     set({
       currentDb: -100,
@@ -46,6 +56,9 @@ const useMonitorStoreBase = create<IMonitorStoreState>((set) => ({
       alertState: 'idle',
       lastNoiseAt: null,
       readings: [],
+      babyBattery: null,
+      babyCharging: false,
+      babyStatusAt: null,
     }),
 }));
 

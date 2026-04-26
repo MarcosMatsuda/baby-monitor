@@ -135,6 +135,10 @@ export default function App(): React.JSX.Element {
               Vibration.cancel();
             }
           }
+
+          if (msg.type === 'status') {
+            monitor.setBabyStatus(msg.battery, msg.charging);
+          }
         };
 
         webrtcPeer.onIceCandidate = (candidate) => {
@@ -274,6 +278,8 @@ export default function App(): React.JSX.Element {
           videoEnabled={videoEnabled}
           canTalk={canTalk}
           isTalking={isTalking}
+          babyBattery={monitor.babyBattery}
+          babyCharging={monitor.babyCharging}
           onThresholdChange={monitor.setThreshold}
           onDismissAlert={handleDismissAlert}
           onToggleVideo={handleToggleVideo}
