@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
 import { RTCView, type MediaStream } from 'react-native-webrtc';
 import { useKeepAwake } from 'expo-keep-awake';
 import { semantic, spacing, typography, radii } from '@baby-monitor/design-tokens';
-import type { ConnectionState } from '@baby-monitor/shared-types';
+import type { ConnectionState, LullabyTrack } from '@baby-monitor/shared-types';
 import {
   StatusPill,
   DbMeter,
@@ -28,11 +28,14 @@ interface MonitorScreenProps {
   readonly isTalking: boolean;
   readonly babyBattery: number | null;
   readonly babyCharging: boolean;
+  readonly lullabyTrack: LullabyTrack | null;
   readonly onThresholdChange: (value: number) => void;
   readonly onDismissAlert: () => void;
   readonly onToggleVideo: () => void;
   readonly onTalkStart: () => void;
   readonly onTalkStop: () => void;
+  readonly onLullabyPlay: (track: LullabyTrack) => void;
+  readonly onLullabyStop: () => void;
   readonly onDisconnect: () => void;
 }
 
@@ -49,11 +52,14 @@ export function MonitorScreen({
   isTalking,
   babyBattery,
   babyCharging,
+  lullabyTrack,
   onThresholdChange,
   onDismissAlert,
   onToggleVideo,
   onTalkStart,
   onTalkStop,
+  onLullabyPlay,
+  onLullabyStop,
   onDisconnect,
 }: MonitorScreenProps): React.JSX.Element {
   // Keep the screen awake while monitoring so the JS engine stays
@@ -119,6 +125,27 @@ export function MonitorScreen({
         />
       </View>
 
+      <View style={styles.lullabyRow}>
+        <LullabyButton
+          label="Ruído branco"
+          active={lullabyTrack === 'white-noise'}
+          onPress={() =>
+            lullabyTrack === 'white-noise'
+              ? onLullabyStop()
+              : onLullabyPlay('white-noise')
+          }
+        />
+        <LullabyButton
+          label="Batimento"
+          active={lullabyTrack === 'heartbeat'}
+          onPress={() =>
+            lullabyTrack === 'heartbeat'
+              ? onLullabyStop()
+              : onLullabyPlay('heartbeat')
+          }
+        />
+      </View>
+
       <View style={styles.bottomBar}>
         {canTalk && (
           <Pressable
@@ -172,6 +199,34 @@ export function MonitorScreen({
   );
 }
 
+interface LullabyButtonProps {
+  readonly label: string;
+  readonly active: boolean;
+  readonly onPress: () => void;
+}
+
+function LullabyButton({ label, active, onPress }: LullabyButtonProps): React.JSX.Element {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.lullabyButton,
+        active && styles.lullabyButtonActive,
+        pressed && styles.pressed,
+      ]}
+    >
+      <Text
+        style={[
+          styles.lullabyButtonText,
+          active && styles.lullabyButtonTextActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
@@ -216,7 +271,31 @@ const styles = StyleSheet.create({
     fontWeight: typography.weight.medium,
   },
   controlsContainer: {
-    paddingBottom: spacing[8],
+    paddingBottom: spacing[6],
+  },
+  lullabyRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing[3],
+    paddingBottom: spacing[6],
+  },
+  lullabyButton: {
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[5],
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: semantic.text.muted,
+  },
+  lullabyButtonActive: {
+    backgroundColor: semantic.text.muted,
+  },
+  lullabyButtonText: {
+    fontSize: typography.size.sm,
+    fontWeight: typography.weight.medium,
+    color: semantic.text.muted,
+  },
+  lullabyButtonTextActive: {
+    color: semantic.bg.primary,
   },
   bottomBar: {
     alignItems: 'center',

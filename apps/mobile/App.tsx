@@ -3,7 +3,11 @@ import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet, Vibration } from 'react-native';
 import { mediaDevices, type MediaStream } from 'react-native-webrtc';
 import { semantic } from '@baby-monitor/design-tokens';
-import type { ConnectionState, DataChannelMessage } from '@baby-monitor/shared-types';
+import type {
+  ConnectionState,
+  DataChannelMessage,
+  LullabyTrack,
+} from '@baby-monitor/shared-types';
 import { ENV } from './src/infrastructure/config/env';
 
 import { RoleSelectionScreen } from './src/presentation/screens/role-selection.screen';
@@ -57,6 +61,7 @@ export default function App(): React.JSX.Element {
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [canTalk, setCanTalk] = useState(false);
   const [isTalking, setIsTalking] = useState(false);
+  const [lullabyTrack, setLullabyTrack] = useState<LullabyTrack | null>(null);
   const connection = useConnection();
   const monitor = useMonitor();
 
@@ -165,6 +170,7 @@ export default function App(): React.JSX.Element {
         setVideoEnabled(false);
         setIsTalking(false);
         setCanTalk(false);
+        setLullabyTrack(null);
         stopLocalAudio();
         disableBackgroundAudio().catch(() => {});
         setScreen('role-selection');
@@ -174,6 +180,7 @@ export default function App(): React.JSX.Element {
       connection.setState('disconnected');
       stopLocalAudio();
       setCanTalk(false);
+      setLullabyTrack(null);
       disableBackgroundAudio().catch(() => {});
     }
   }, [connection, monitor]);
@@ -191,6 +198,7 @@ export default function App(): React.JSX.Element {
     setVideoEnabled(false);
     setIsTalking(false);
     setCanTalk(false);
+    setLullabyTrack(null);
     stopLocalAudio();
     disableBackgroundAudio().catch(() => {});
     setScreen('role-selection');
@@ -228,6 +236,18 @@ export default function App(): React.JSX.Element {
     setIsTalking(false);
   }, []);
 
+  const handleLullabyPlay = useCallback((track: LullabyTrack) => {
+    if (!webrtcPeer) return;
+    webrtcPeer.sendData({ type: 'play-lullaby', track, ts: Date.now() });
+    setLullabyTrack(track);
+  }, []);
+
+  const handleLullabyStop = useCallback(() => {
+    if (!webrtcPeer) return;
+    webrtcPeer.sendData({ type: 'stop-lullaby', ts: Date.now() });
+    setLullabyTrack(null);
+  }, []);
+
   const handleDisconnect = useCallback(() => {
     webrtcPeer?.close();
     webrtcPeer = null;
@@ -239,6 +259,7 @@ export default function App(): React.JSX.Element {
     setVideoEnabled(false);
     setIsTalking(false);
     setCanTalk(false);
+    setLullabyTrack(null);
     stopLocalAudio();
     disableBackgroundAudio().catch(() => {});
     setScreen('role-selection');
@@ -280,11 +301,14 @@ export default function App(): React.JSX.Element {
           isTalking={isTalking}
           babyBattery={monitor.babyBattery}
           babyCharging={monitor.babyCharging}
+          lullabyTrack={lullabyTrack}
           onThresholdChange={monitor.setThreshold}
           onDismissAlert={handleDismissAlert}
           onToggleVideo={handleToggleVideo}
           onTalkStart={handleTalkStart}
           onTalkStop={handleTalkStop}
+          onLullabyPlay={handleLullabyPlay}
+          onLullabyStop={handleLullabyStop}
           onDisconnect={handleDisconnect}
         />
       )}
