@@ -4,7 +4,13 @@ import { RTCView, type MediaStream } from 'react-native-webrtc';
 import { useKeepAwake } from 'expo-keep-awake';
 import { semantic, spacing, typography, radii } from '@baby-monitor/design-tokens';
 import type { ConnectionState } from '@baby-monitor/shared-types';
-import { StatusPill, DbMeter, ThresholdSlider, AlertOverlay } from '../components';
+import {
+  StatusPill,
+  DbMeter,
+  ThresholdSlider,
+  AlertOverlay,
+  BatteryIndicator,
+} from '../components';
 import { useElapsedTime } from '../hooks/use-elapsed-time.hook';
 import { useLastActivity } from '../hooks/use-last-activity.hook';
 import { commonStyles } from '../theme';
@@ -20,6 +26,8 @@ interface MonitorScreenProps {
   readonly videoEnabled: boolean;
   readonly canTalk: boolean;
   readonly isTalking: boolean;
+  readonly babyBattery: number | null;
+  readonly babyCharging: boolean;
   readonly onThresholdChange: (value: number) => void;
   readonly onDismissAlert: () => void;
   readonly onToggleVideo: () => void;
@@ -39,6 +47,8 @@ export function MonitorScreen({
   videoEnabled,
   canTalk,
   isTalking,
+  babyBattery,
+  babyCharging,
   onThresholdChange,
   onDismissAlert,
   onToggleVideo,
@@ -77,7 +87,10 @@ export function MonitorScreen({
 
       <View style={styles.topBar}>
         <StatusPill state={connectionState} />
-        <Text style={styles.timer}>{elapsed}</Text>
+        <View style={styles.topBarRight}>
+          <BatteryIndicator level={babyBattery} charging={babyCharging} />
+          <Text style={styles.timer}>{elapsed}</Text>
+        </View>
       </View>
 
       {showVideo && (
@@ -166,6 +179,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: spacing[16],
     paddingBottom: spacing[6],
+  },
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
   },
   timer: {
     fontFamily: typography.family.mono,

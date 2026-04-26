@@ -170,3 +170,9 @@ export const ALERT_DISMISS_DELAY_MS = 5000;
 export const DEFAULT_THRESHOLD_DB = -35;
 export const RECONNECT_TIMEOUT_MS = 60000;
 export const ROOM_TTL_MS = 120000;
+// How often the baby pushes a status snapshot (battery + charging)
+// to the parent over the data channel.
+export const STATUS_SEND_INTERVAL_MS = 30000;
+// Below this charge level (and not charging) the parent surfaces a
+// "low battery" warning on the baby station indicator.
+export const LOW_BATTERY_THRESHOLD = 0.15;

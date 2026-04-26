@@ -6,12 +6,22 @@
 import { AudioCaptureRepository } from './infrastructure/audio/audio-capture.repository';
 import { SignalingClient } from './infrastructure/signaling/signaling.client';
 import { WebRtcPeer } from './infrastructure/webrtc/webrtc-peer';
+import {
+  BatteryMonitorRepository,
+  type BatterySnapshot,
+} from './infrastructure/battery/battery-monitor.repository';
 import { BabyStationUi } from './presentation/components/baby-station.ui';
 import { AudioLevel } from './domain/entities/audio-level.entity';
 import { Connection } from './domain/entities/connection.entity';
 import { SIGNALING_URL } from '@baby-monitor/webrtc-config';
-import { DB_SEND_INTERVAL_MS } from '@baby-monitor/shared-types';
-import type { ConnectionState } from '@baby-monitor/shared-types';
+import {
+  DB_SEND_INTERVAL_MS,
+  STATUS_SEND_INTERVAL_MS,
+} from '@baby-monitor/shared-types';
+import type {
+  ConnectionState,
+  StatusMessage,
+} from '@baby-monitor/shared-types';
 import './presentation/styles/main.css';
 
 class BabyStationApp {
@@ -20,8 +30,10 @@ class BabyStationApp {
   private readonly webrtc = new WebRtcPeer();
   private readonly ui = new BabyStationUi();
   private readonly connection = new Connection();
+  private readonly battery = new BatteryMonitorRepository();
 
   private dbInterval: ReturnType<typeof setInterval> | null = null;
+  private statusInterval: ReturnType<typeof setInterval> | null = null;
 
   async start(): Promise<void> {
     const roomCode = this.extractRoomCode();
@@ -150,6 +162,7 @@ class BabyStationApp {
         const offer = await this.webrtc.createOffer();
         this.signaling.sendSignal(offer);
         this.startDbStream();
+        this.startStatusStream();
       }
     });
 
@@ -165,6 +178,7 @@ class BabyStationApp {
     this.signaling.onPeerDisconnected(() => {
       this.updateState('disconnected');
       this.stopDbStream();
+      this.stopStatusStream();
     });
 
     this.signaling.onRoomError((data) => {
@@ -206,9 +220,43 @@ class BabyStationApp {
     }
   }
 
+  private async startStatusStream(): Promise<void> {
+    const supported = await this.battery.start((snapshot) => {
+      this.sendStatus(snapshot);
+    });
+    if (!supported) return;
+
+    const initial = this.battery.getSnapshot();
+    if (initial) this.sendStatus(initial);
+
+    this.statusInterval = setInterval(() => {
+      const snap = this.battery.getSnapshot();
+      if (snap) this.sendStatus(snap);
+    }, STATUS_SEND_INTERVAL_MS);
+  }
+
+  private stopStatusStream(): void {
+    if (this.statusInterval) {
+      clearInterval(this.statusInterval);
+      this.statusInterval = null;
+    }
+    this.battery.stop();
+  }
+
+  private sendStatus(snapshot: BatterySnapshot): void {
+    const msg: StatusMessage = {
+      type: 'status',
+      battery: snapshot.level,
+      charging: snapshot.charging,
+      ts: Date.now(),
+    };
+    this.webrtc.sendData(JSON.stringify(msg));
+  }
+
   private setupDisconnect(): void {
     this.ui.onDisconnect(() => {
       this.stopDbStream();
+      this.stopStatusStream();
       this.audioCapture.stopKeepAlive();
       this.audioCapture.stopAnalyser();
       this.detachParentAudio();
