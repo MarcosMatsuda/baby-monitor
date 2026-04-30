@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { colors, semantic, spacing, typography } from '@baby-monitor/design-tokens';
+import { describeThreshold } from '../../domain/entities/threshold-description';
 
 interface ThresholdSliderProps {
   readonly value: number;
@@ -12,6 +13,8 @@ export function ThresholdSlider({
   value,
   onValueChange,
 }: ThresholdSliderProps): React.JSX.Element {
+  const helpText = describeThreshold(value);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -33,6 +36,7 @@ export function ThresholdSlider({
         <Text style={styles.rangeLabel}>Mais sensível</Text>
         <Text style={styles.rangeLabel}>Menos sensível</Text>
       </View>
+      <Text style={styles.helpText}>{helpText}</Text>
     </View>
   );
 }
@@ -68,5 +72,11 @@ const styles = StyleSheet.create({
   rangeLabel: {
     fontSize: typography.size.xs,
     color: semantic.text.muted,
+  },
+  helpText: {
+    fontSize: typography.size.xs,
+    color: semantic.text.secondary,
+    lineHeight: typography.size.xs * 1.5,
+    paddingTop: spacing[1],
   },
 });
