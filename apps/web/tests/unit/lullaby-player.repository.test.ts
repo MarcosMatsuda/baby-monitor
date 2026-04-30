@@ -164,4 +164,66 @@ describe('LullabyPlayerRepository', () => {
       expect(ctx.state).toBe('running');
     });
   });
+
+  describe('volume control', () => {
+    const mainGainOf = (ctx: ReturnType<typeof installFakeAudioContext>['contexts'][number]) => {
+      // ensureContext creates the main gain first, before any track-
+      // specific gain. It is the node connected straight to destination.
+      return ctx.createdGains.find((g) => g.connections.includes(ctx.destination))!;
+    };
+
+    test('applies the volume passed to play() to the main gain node', () => {
+      repo.play('white-noise', 0.4);
+      const ctx = audio.contexts[0];
+      expect(mainGainOf(ctx).gain.value).toBeCloseTo(0.4, 5);
+    });
+
+    test('clamps volumes above 1 down to 1', () => {
+      repo.play('white-noise', 5);
+      const ctx = audio.contexts[0];
+      expect(mainGainOf(ctx).gain.value).toBe(1);
+    });
+
+    test('clamps negative volumes up to 0', () => {
+      repo.play('white-noise', -0.5);
+      const ctx = audio.contexts[0];
+      expect(mainGainOf(ctx).gain.value).toBe(0);
+    });
+
+    test('treats NaN as 0 (defensive against bad data-channel input)', () => {
+      repo.play('white-noise', Number.NaN);
+      const ctx = audio.contexts[0];
+      expect(mainGainOf(ctx).gain.value).toBe(0);
+    });
+
+    test('updates volume live without rebuilding the audio graph when the same track is re-played', () => {
+      repo.play('white-noise', 0.3);
+      const ctx = audio.contexts[0];
+      const sourcesBefore = ctx.createdBufferSources.length;
+
+      repo.play('white-noise', 0.8);
+
+      expect(ctx.createdBufferSources.length).toBe(sourcesBefore);
+      expect(mainGainOf(ctx).gain.value).toBeCloseTo(0.8, 5);
+    });
+
+    test('setVolume() updates the gain on the running track', () => {
+      repo.play('white-noise', 0.3);
+      const ctx = audio.contexts[0];
+
+      repo.setVolume(0.65);
+
+      expect(mainGainOf(ctx).gain.value).toBeCloseTo(0.65, 5);
+    });
+
+    test('setVolume() is a no-op when no audio context exists yet', () => {
+      expect(() => repo.setVolume(0.5)).not.toThrow();
+    });
+
+    test('defaults to full volume (1) when play is called without a volume argument', () => {
+      repo.play('white-noise');
+      const ctx = audio.contexts[0];
+      expect(mainGainOf(ctx).gain.value).toBe(1);
+    });
+  });
 });

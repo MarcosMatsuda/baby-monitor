@@ -245,17 +245,42 @@ export default function App(): React.JSX.Element {
     setIsTalking(false);
   }, []);
 
-  const handleLullabyPlay = useCallback((track: LullabyTrack) => {
-    if (!webrtcPeer) return;
-    webrtcPeer.sendData({ type: 'play-lullaby', track, ts: Date.now() });
-    setLullabyTrack(track);
-  }, []);
+  const handleLullabyPlay = useCallback(
+    (track: LullabyTrack) => {
+      if (!webrtcPeer) return;
+      webrtcPeer.sendData({
+        type: 'play-lullaby',
+        track,
+        volume: monitor.lullabyVolume,
+        ts: Date.now(),
+      });
+      setLullabyTrack(track);
+    },
+    [monitor.lullabyVolume],
+  );
 
   const handleLullabyStop = useCallback(() => {
     if (!webrtcPeer) return;
     webrtcPeer.sendData({ type: 'stop-lullaby', ts: Date.now() });
     setLullabyTrack(null);
   }, []);
+
+  const handleLullabyVolumeChange = useCallback(
+    (volume: number) => {
+      monitor.setLullabyVolume(volume);
+      // Re-send the current track so the baby applies the new volume
+      // live without restarting playback.
+      if (lullabyTrack && webrtcPeer) {
+        webrtcPeer.sendData({
+          type: 'play-lullaby',
+          track: lullabyTrack,
+          volume,
+          ts: Date.now(),
+        });
+      }
+    },
+    [lullabyTrack, monitor.setLullabyVolume],
+  );
 
   const handleToggleFlashlight = useCallback(() => {
     setFlashlightOn((prev) => {
@@ -331,6 +356,7 @@ export default function App(): React.JSX.Element {
           babyBattery={monitor.babyBattery}
           babyCharging={monitor.babyCharging}
           lullabyTrack={lullabyTrack}
+          lullabyVolume={monitor.lullabyVolume}
           flashlightOn={flashlightOn}
           bitratePreset={bitratePreset}
           onThresholdChange={monitor.setThreshold}
@@ -340,6 +366,7 @@ export default function App(): React.JSX.Element {
           onTalkStop={handleTalkStop}
           onLullabyPlay={handleLullabyPlay}
           onLullabyStop={handleLullabyStop}
+          onLullabyVolumeChange={handleLullabyVolumeChange}
           onToggleFlashlight={handleToggleFlashlight}
           onBitrateChange={handleBitrateChange}
           onDisconnect={handleDisconnect}

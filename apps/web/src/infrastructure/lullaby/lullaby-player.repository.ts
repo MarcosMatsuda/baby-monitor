@@ -12,6 +12,7 @@ const WHITE_NOISE_BUFFER_SECONDS = 2;
 const HEARTBEAT_BPM = 60;
 const HEARTBEAT_GAIN = 0.4;
 const WHITE_NOISE_GAIN = 0.25;
+const DEFAULT_VOLUME = 1;
 
 export class LullabyPlayerRepository {
   private context: AudioContext | null = null;
@@ -20,11 +21,18 @@ export class LullabyPlayerRepository {
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private mainGain: GainNode | null = null;
 
-  play(track: LullabyTrack): void {
-    if (this.currentTrack === track) return;
+  play(track: LullabyTrack, volume: number = DEFAULT_VOLUME): void {
+    // Live volume update without re-creating the audio graph: same
+    // track, just a different gain. Keeps playback smooth while the
+    // parent drags the slider.
+    if (this.currentTrack === track) {
+      this.setVolume(volume);
+      return;
+    }
 
     this.stop();
     this.ensureContext();
+    this.setVolume(volume);
 
     if (track === 'white-noise') {
       this.startWhiteNoise();
@@ -32,6 +40,11 @@ export class LullabyPlayerRepository {
       this.startHeartbeat();
     }
     this.currentTrack = track;
+  }
+
+  setVolume(volume: number): void {
+    if (!this.mainGain) return;
+    this.mainGain.gain.value = clampVolume(volume);
   }
 
   stop(): void {
@@ -143,3 +156,10 @@ export class LullabyPlayerRepository {
     };
   }
 }
+
+const clampVolume = (volume: number): number => {
+  if (Number.isNaN(volume)) return 0;
+  if (volume < 0) return 0;
+  if (volume > 1) return 1;
+  return volume;
+};

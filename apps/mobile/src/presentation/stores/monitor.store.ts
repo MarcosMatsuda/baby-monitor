@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { DEFAULT_THRESHOLD_DB, type AlertState } from '@baby-monitor/shared-types';
+import {
+  DEFAULT_LULLABY_VOLUME,
+  DEFAULT_THRESHOLD_DB,
+  type AlertState,
+} from '@baby-monitor/shared-types';
 
 interface IMonitorStoreState {
   currentDb: number;
@@ -10,11 +14,13 @@ interface IMonitorStoreState {
   babyBattery: number | null;
   babyCharging: boolean;
   babyStatusAt: number | null;
+  lullabyVolume: number;
 
   pushReading: (db: number) => void;
   setThreshold: (threshold: number) => void;
   setAlertState: (state: AlertState) => void;
   setBabyStatus: (battery: number, charging: boolean) => void;
+  setLullabyVolume: (volume: number) => void;
   reset: () => void;
 }
 
@@ -29,6 +35,7 @@ const useMonitorStoreBase = create<IMonitorStoreState>((set) => ({
   babyBattery: null,
   babyCharging: false,
   babyStatusAt: null,
+  lullabyVolume: DEFAULT_LULLABY_VOLUME,
 
   pushReading: (db) =>
     set((prev) => {
@@ -49,6 +56,8 @@ const useMonitorStoreBase = create<IMonitorStoreState>((set) => ({
   setBabyStatus: (battery, charging) =>
     set({ babyBattery: battery, babyCharging: charging, babyStatusAt: Date.now() }),
 
+  setLullabyVolume: (lullabyVolume) => set({ lullabyVolume }),
+
   reset: () =>
     set({
       currentDb: -100,
@@ -59,6 +68,7 @@ const useMonitorStoreBase = create<IMonitorStoreState>((set) => ({
       babyBattery: null,
       babyCharging: false,
       babyStatusAt: null,
+      lullabyVolume: DEFAULT_LULLABY_VOLUME,
     }),
 }));
 

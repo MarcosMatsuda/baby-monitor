@@ -103,4 +103,20 @@ describe('MonitorStore', () => {
     useMonitorStoreBase.getState().setAlertState('triggered');
     expect(useMonitorStoreBase.getState().alertState).toBe('triggered');
   });
+
+  it('should start with default lullaby volume (0.5)', () => {
+    expect(useMonitorStoreBase.getState().lullabyVolume).toBe(0.5);
+  });
+
+  it('should update lullaby volume', () => {
+    useMonitorStoreBase.getState().setLullabyVolume(0.8);
+    expect(useMonitorStoreBase.getState().lullabyVolume).toBe(0.8);
+  });
+
+  it('should reset lullaby volume to default', () => {
+    const store = useMonitorStoreBase.getState();
+    store.setLullabyVolume(0.1);
+    store.reset();
+    expect(useMonitorStoreBase.getState().lullabyVolume).toBe(0.5);
+  });
 });
