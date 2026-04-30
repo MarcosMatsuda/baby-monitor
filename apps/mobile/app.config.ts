@@ -37,7 +37,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'ACCESS_NETWORK_STATE',
     ],
   },
-  plugins: [],
+  plugins: ['expo-audio'],
   owner: 'marcos.matsuda',
   extra: {
     signalingUrl: process.env.SIGNALING_URL || 'http://localhost:3003',
