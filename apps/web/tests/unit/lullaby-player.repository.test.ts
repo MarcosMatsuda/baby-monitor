@@ -1,0 +1,167 @@
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { LullabyPlayerRepository } from '../../src/infrastructure/lullaby/lullaby-player.repository';
+import { installFakeAudioContext, type InstalledAudio } from '../helpers/fake-audio-context';
+
+describe('LullabyPlayerRepository', () => {
+  let repo: LullabyPlayerRepository;
+  let audio: InstalledAudio;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    repo = new LullabyPlayerRepository();
+    audio = installFakeAudioContext();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  describe('play("white-noise")', () => {
+    test('creates an audio context, fills a noise buffer, loops it through gain', () => {
+      repo.play('white-noise');
+
+      expect(audio.contexts).toHaveLength(1);
+      const ctx = audio.contexts[0];
+
+      expect(ctx.createdBufferSources).toHaveLength(1);
+      const source = ctx.createdBufferSources[0];
+      expect(source.loop).toBe(true);
+      expect(source.started).toBe(true);
+      expect(source.buffer).not.toBeNull();
+    });
+
+    test('writes random samples in the [-1, 1] range into the noise buffer', () => {
+      repo.play('white-noise');
+      const buffer = audio.contexts[0].createdBufferSources[0].buffer!;
+      // Sample a few entries — random can be 0, but in 96000 samples
+      // we expect plenty of non-zero entries.
+      let nonZero = 0;
+      for (const sample of buffer.data) {
+        expect(sample).toBeGreaterThanOrEqual(-1);
+        expect(sample).toBeLessThanOrEqual(1);
+        if (sample !== 0) nonZero++;
+      }
+      expect(nonZero).toBeGreaterThan(0);
+    });
+
+    test('sets the noise gain below 1 to keep volume calibrated', () => {
+      repo.play('white-noise');
+      const ctx = audio.contexts[0];
+      // Two gain nodes are created: mainGain (=1) and noiseGain (=0.25).
+      const noiseGain = ctx.createdGains.find((g) => g.gain.value < 1);
+      expect(noiseGain).toBeDefined();
+      expect(noiseGain!.gain.value).toBeLessThanOrEqual(0.25);
+    });
+  });
+
+  describe('play("heartbeat")', () => {
+    test('schedules an immediate thump pair plus a recurring timer', () => {
+      repo.play('heartbeat');
+      const ctx = audio.contexts[0];
+
+      // Each pair is two oscillators (lub + dub).
+      expect(ctx.createdOscillators).toHaveLength(2);
+
+      // Timer fires another pair every cycle (~1s for 60 BPM).
+      vi.advanceTimersByTime(1000);
+      expect(ctx.createdOscillators.length).toBeGreaterThanOrEqual(4);
+    });
+
+    test('does not start the noise buffer source for heartbeat', () => {
+      repo.play('heartbeat');
+      expect(audio.contexts[0].createdBufferSources).toHaveLength(0);
+    });
+  });
+
+  describe('play idempotency and switching', () => {
+    test('playing the same track twice is a no-op (does not rebuild the graph)', () => {
+      repo.play('white-noise');
+      const beforeSources = audio.contexts[0].createdBufferSources.length;
+
+      repo.play('white-noise');
+
+      expect(audio.contexts[0].createdBufferSources.length).toBe(beforeSources);
+    });
+
+    test('switching tracks stops the previous one before starting the new one', () => {
+      repo.play('white-noise');
+      const noiseSource = audio.contexts[0].createdBufferSources[0];
+
+      repo.play('heartbeat');
+
+      expect(noiseSource.stopped).toBe(true);
+      expect(audio.contexts[0].createdOscillators.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('stop', () => {
+    test('stops the noise source on white-noise', () => {
+      repo.play('white-noise');
+      const source = audio.contexts[0].createdBufferSources[0];
+
+      repo.stop();
+
+      expect(source.stopped).toBe(true);
+    });
+
+    test('clears the heartbeat interval timer', () => {
+      repo.play('heartbeat');
+      const beforeStop = audio.contexts[0].createdOscillators.length;
+
+      repo.stop();
+      vi.advanceTimersByTime(5000);
+
+      expect(audio.contexts[0].createdOscillators.length).toBe(beforeStop);
+    });
+
+    test('is safe to call without a current track', () => {
+      expect(() => repo.stop()).not.toThrow();
+    });
+
+    test('is safe when the underlying source was already stopped', () => {
+      repo.play('white-noise');
+      const source = audio.contexts[0].createdBufferSources[0];
+      source.stopped = true; // simulate the engine having stopped it
+
+      expect(() => repo.stop()).not.toThrow();
+    });
+  });
+
+  describe('dispose', () => {
+    test('closes the audio context and stops any active track', () => {
+      repo.play('white-noise');
+      const ctx = audio.contexts[0];
+
+      repo.dispose();
+
+      expect(ctx.closed).toBe(true);
+    });
+
+    test('rebuilds the context on the next play call', () => {
+      repo.play('white-noise');
+      repo.dispose();
+
+      repo.play('white-noise');
+
+      expect(audio.contexts).toHaveLength(2);
+    });
+
+    test('is safe to call before any play', () => {
+      expect(() => repo.dispose()).not.toThrow();
+    });
+  });
+
+  describe('suspended context recovery', () => {
+    test('resumes a suspended context when play is called again', () => {
+      repo.play('white-noise');
+      const ctx = audio.contexts[0];
+      ctx.state = 'suspended';
+
+      repo.play('heartbeat');
+
+      expect(ctx.resumed).toBe(true);
+      expect(ctx.state).toBe('running');
+    });
+  });
+});
