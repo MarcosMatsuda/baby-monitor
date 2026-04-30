@@ -14,6 +14,7 @@ import {
   ThresholdSlider,
   AlertOverlay,
   BatteryIndicator,
+  AlertPreviewPill,
 } from '../components';
 import { useElapsedTime } from '../hooks/use-elapsed-time.hook';
 import { useLastActivity } from '../hooks/use-last-activity.hook';
@@ -183,6 +184,11 @@ export function MonitorScreen({
 
         <View style={styles.meterContainer}>
           <DbMeter db={currentDb} />
+          <AlertPreviewPill
+            currentDb={currentDb}
+            threshold={threshold}
+            alertActive={alertActive}
+          />
         </View>
 
         <View style={styles.activityContainer}>
@@ -383,6 +389,7 @@ const styles = StyleSheet.create({
   meterContainer: {
     alignItems: 'center',
     paddingVertical: spacing[6],
+    gap: spacing[4],
   },
   activityContainer: {
     alignItems: 'center',
