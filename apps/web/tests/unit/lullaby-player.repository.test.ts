@@ -34,14 +34,23 @@ describe('LullabyPlayerRepository', () => {
     test('writes random samples in the [-1, 1] range into the noise buffer', () => {
       repo.play('white-noise');
       const buffer = audio.contexts[0].createdBufferSources[0].buffer!;
-      // Sample a few entries — random can be 0, but in 96000 samples
-      // we expect plenty of non-zero entries.
+      // Spot-check a 1000-sample window. Calling expect() on every entry
+      // of a 96k buffer ran a third of a million assertions and timed out
+      // in CI. 1000 samples is more than enough to catch out-of-range
+      // values or an all-zero buffer.
+      const SAMPLE_COUNT = 1000;
+      const stride = Math.floor(buffer.data.length / SAMPLE_COUNT);
+      let min = Infinity;
+      let max = -Infinity;
       let nonZero = 0;
-      for (const sample of buffer.data) {
-        expect(sample).toBeGreaterThanOrEqual(-1);
-        expect(sample).toBeLessThanOrEqual(1);
+      for (let i = 0; i < buffer.data.length; i += stride) {
+        const sample = buffer.data[i];
+        if (sample < min) min = sample;
+        if (sample > max) max = sample;
         if (sample !== 0) nonZero++;
       }
+      expect(min).toBeGreaterThanOrEqual(-1);
+      expect(max).toBeLessThanOrEqual(1);
       expect(nonZero).toBeGreaterThan(0);
     });
 

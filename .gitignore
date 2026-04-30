@@ -27,3 +27,6 @@ ios/
 
 # Local-only architecture doc (never committed)
 CLAUDE.md
+
+# Claude Code local state (per-project permissions, lock files, plans)
+.claude/
