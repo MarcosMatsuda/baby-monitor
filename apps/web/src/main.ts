@@ -163,7 +163,7 @@ class BabyStationApp {
             this.webrtc.setMicEnabled(!msg.talking);
           }
           if (msg.type === 'play-lullaby') {
-            this.lullaby.play(msg.track);
+            this.lullaby.play(msg.track, msg.volume);
           }
           if (msg.type === 'stop-lullaby') {
             this.lullaby.stop();

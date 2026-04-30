@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { RTCView, type MediaStream } from 'react-native-webrtc';
 import { useKeepAwake } from 'expo-keep-awake';
 import { semantic, spacing, typography, radii } from '@baby-monitor/design-tokens';
@@ -40,6 +41,7 @@ interface MonitorScreenProps {
   readonly babyBattery: number | null;
   readonly babyCharging: boolean;
   readonly lullabyTrack: LullabyTrack | null;
+  readonly lullabyVolume: number;
   readonly flashlightOn: boolean;
   readonly bitratePreset: BitratePreset;
   readonly onThresholdChange: (value: number) => void;
@@ -49,6 +51,7 @@ interface MonitorScreenProps {
   readonly onTalkStop: () => void;
   readonly onLullabyPlay: (track: LullabyTrack) => void;
   readonly onLullabyStop: () => void;
+  readonly onLullabyVolumeChange: (volume: number) => void;
   readonly onToggleFlashlight: () => void;
   readonly onBitrateChange: (preset: BitratePreset) => void;
   readonly onDisconnect: () => void;
@@ -68,6 +71,7 @@ export function MonitorScreen({
   babyBattery,
   babyCharging,
   lullabyTrack,
+  lullabyVolume,
   flashlightOn,
   bitratePreset,
   onThresholdChange,
@@ -77,6 +81,7 @@ export function MonitorScreen({
   onTalkStop,
   onLullabyPlay,
   onLullabyStop,
+  onLullabyVolumeChange,
   onToggleFlashlight,
   onBitrateChange,
   onDisconnect,
@@ -202,25 +207,45 @@ export function MonitorScreen({
           />
         </View>
 
-        <View style={styles.lullabyRow}>
-          <LullabyButton
-            label="Ruído branco"
-            active={lullabyTrack === 'white-noise'}
-            onPress={() =>
-              lullabyTrack === 'white-noise'
-                ? onLullabyStop()
-                : onLullabyPlay('white-noise')
-            }
-          />
-          <LullabyButton
-            label="Batimento"
-            active={lullabyTrack === 'heartbeat'}
-            onPress={() =>
-              lullabyTrack === 'heartbeat'
-                ? onLullabyStop()
-                : onLullabyPlay('heartbeat')
-            }
-          />
+        <View style={styles.lullabySection}>
+          <View style={styles.lullabyRow}>
+            <LullabyButton
+              label="Ruído branco"
+              active={lullabyTrack === 'white-noise'}
+              onPress={() =>
+                lullabyTrack === 'white-noise'
+                  ? onLullabyStop()
+                  : onLullabyPlay('white-noise')
+              }
+            />
+            <LullabyButton
+              label="Batimento"
+              active={lullabyTrack === 'heartbeat'}
+              onPress={() =>
+                lullabyTrack === 'heartbeat'
+                  ? onLullabyStop()
+                  : onLullabyPlay('heartbeat')
+              }
+            />
+          </View>
+
+          {lullabyTrack !== null && (
+            <View style={styles.lullabyVolumeRow}>
+              <Text style={styles.lullabyVolumeLabel}>
+                Volume {Math.round(lullabyVolume * 100)}%
+              </Text>
+              <Slider
+                style={styles.lullabyVolumeSlider}
+                minimumValue={0}
+                maximumValue={1}
+                step={0.05}
+                value={lullabyVolume}
+                minimumTrackTintColor={semantic.status.connected}
+                maximumTrackTintColor={semantic.text.muted}
+                onValueChange={onLullabyVolumeChange}
+              />
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -403,11 +428,28 @@ const styles = StyleSheet.create({
   controlsContainer: {
     paddingBottom: spacing[6],
   },
+  lullabySection: {
+    paddingBottom: spacing[6],
+    gap: spacing[3],
+  },
   lullabyRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: spacing[3],
-    paddingBottom: spacing[6],
+  },
+  lullabyVolumeRow: {
+    paddingHorizontal: spacing[4],
+    gap: spacing[1],
+  },
+  lullabyVolumeLabel: {
+    fontSize: typography.size.xs,
+    color: semantic.text.muted,
+    fontWeight: typography.weight.medium,
+    textAlign: 'center',
+  },
+  lullabyVolumeSlider: {
+    width: '100%',
+    height: 32,
   },
   lullabyButton: {
     paddingVertical: spacing[2],

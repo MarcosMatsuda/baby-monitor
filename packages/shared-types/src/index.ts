@@ -113,12 +113,20 @@ export interface TalkStateMessage {
 
 // Parent → baby: play one of the synthesized soothing tracks on the
 // baby phone speaker. The baby station owns the synthesis; the parent
-// only chooses which preset.
+// only chooses which preset and the playback volume (0..1). When
+// `volume` is omitted the baby falls back to its built-in default,
+// keeping the message backward-compatible with older parents.
 export interface PlayLullabyMessage {
   readonly type: 'play-lullaby';
   readonly track: LullabyTrack;
+  readonly volume?: number;
   readonly ts: number;
 }
+
+// Default lullaby volume used when the parent app first connects, on
+// a 0..1 scale. Picked low because phone speakers reach uncomfortably
+// loud levels for a sleeping baby very fast.
+export const DEFAULT_LULLABY_VOLUME = 0.5;
 
 // Parent → baby: stop any currently playing lullaby track.
 export interface StopLullabyMessage {
