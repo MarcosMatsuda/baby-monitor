@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
 import { RTCView, type MediaStream } from 'react-native-webrtc';
 import { useKeepAwake } from 'expo-keep-awake';
 import { semantic, spacing, typography, radii } from '@baby-monitor/design-tokens';
@@ -117,97 +117,103 @@ export function MonitorScreen({
         </View>
       </View>
 
-      {showVideo && (
-        <View style={styles.videoContainer}>
-          <RTCView
-            streamURL={(remoteStream as unknown as { toURL: () => string }).toURL()}
-            style={styles.video}
-            objectFit="cover"
-            mirror={false}
-          />
-        </View>
-      )}
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {showVideo && (
+          <View style={styles.videoContainer}>
+            <RTCView
+              streamURL={(remoteStream as unknown as { toURL: () => string }).toURL()}
+              style={styles.video}
+              objectFit="cover"
+              mirror={false}
+            />
+          </View>
+        )}
 
-      {videoEnabled && (
-        <View style={styles.videoControls}>
-          <Pressable
-            onPress={onToggleFlashlight}
-            style={({ pressed }) => [
-              styles.chip,
-              flashlightOn && styles.chipActive,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text
-              style={[
-                styles.chipText,
-                flashlightOn && styles.chipTextActive,
+        {videoEnabled && (
+          <View style={styles.videoControls}>
+            <Pressable
+              onPress={onToggleFlashlight}
+              style={({ pressed }) => [
+                styles.chip,
+                flashlightOn && styles.chipActive,
+                pressed && styles.pressed,
               ]}
             >
-              {flashlightOn ? 'Lanterna ligada' : 'Lanterna'}
-            </Text>
-          </Pressable>
-
-          <View style={styles.bitrateGroup}>
-            {(['low', 'normal', 'high'] as const).map((preset) => (
-              <Pressable
-                key={preset}
-                onPress={() => onBitrateChange(preset)}
-                style={({ pressed }) => [
-                  styles.bitrateChip,
-                  bitratePreset === preset && styles.chipActive,
-                  pressed && styles.pressed,
+              <Text
+                style={[
+                  styles.chipText,
+                  flashlightOn && styles.chipTextActive,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.chipText,
-                    bitratePreset === preset && styles.chipTextActive,
+                {flashlightOn ? 'Lanterna ligada' : 'Lanterna'}
+              </Text>
+            </Pressable>
+
+            <View style={styles.bitrateGroup}>
+              {(['low', 'normal', 'high'] as const).map((preset) => (
+                <Pressable
+                  key={preset}
+                  onPress={() => onBitrateChange(preset)}
+                  style={({ pressed }) => [
+                    styles.bitrateChip,
+                    bitratePreset === preset && styles.chipActive,
+                    pressed && styles.pressed,
                   ]}
                 >
-                  {BITRATE_LABELS[preset]}
-                </Text>
-              </Pressable>
-            ))}
+                  <Text
+                    style={[
+                      styles.chipText,
+                      bitratePreset === preset && styles.chipTextActive,
+                    ]}
+                  >
+                    {BITRATE_LABELS[preset]}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
+        )}
+
+        <View style={styles.meterContainer}>
+          <DbMeter db={currentDb} />
         </View>
-      )}
 
-      <View style={styles.meterContainer}>
-        <DbMeter db={currentDb} />
-      </View>
+        <View style={styles.activityContainer}>
+          <Text style={styles.activityLabel}>{lastActivity}</Text>
+        </View>
 
-      <View style={styles.activityContainer}>
-        <Text style={styles.activityLabel}>{lastActivity}</Text>
-      </View>
+        <View style={styles.controlsContainer}>
+          <ThresholdSlider
+            value={threshold}
+            onValueChange={onThresholdChange}
+          />
+        </View>
 
-      <View style={styles.controlsContainer}>
-        <ThresholdSlider
-          value={threshold}
-          onValueChange={onThresholdChange}
-        />
-      </View>
-
-      <View style={styles.lullabyRow}>
-        <LullabyButton
-          label="Ruído branco"
-          active={lullabyTrack === 'white-noise'}
-          onPress={() =>
-            lullabyTrack === 'white-noise'
-              ? onLullabyStop()
-              : onLullabyPlay('white-noise')
-          }
-        />
-        <LullabyButton
-          label="Batimento"
-          active={lullabyTrack === 'heartbeat'}
-          onPress={() =>
-            lullabyTrack === 'heartbeat'
-              ? onLullabyStop()
-              : onLullabyPlay('heartbeat')
-          }
-        />
-      </View>
+        <View style={styles.lullabyRow}>
+          <LullabyButton
+            label="Ruído branco"
+            active={lullabyTrack === 'white-noise'}
+            onPress={() =>
+              lullabyTrack === 'white-noise'
+                ? onLullabyStop()
+                : onLullabyPlay('white-noise')
+            }
+          />
+          <LullabyButton
+            label="Batimento"
+            active={lullabyTrack === 'heartbeat'}
+            onPress={() =>
+              lullabyTrack === 'heartbeat'
+                ? onLullabyStop()
+                : onLullabyPlay('heartbeat')
+            }
+          />
+        </View>
+      </ScrollView>
 
       <View style={styles.bottomBar}>
         {canTalk && (
@@ -295,8 +301,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: spacing[16],
-    paddingBottom: spacing[6],
+    paddingTop: spacing[12],
+    paddingBottom: spacing[4],
   },
   topBarRight: {
     flexDirection: 'row',
@@ -354,11 +360,15 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: semantic.bg.primary,
   },
-  meterContainer: {
+  scrollArea: {
     flex: 1,
-    justifyContent: 'center',
+  },
+  scrollContent: {
+    paddingBottom: spacing[6],
+  },
+  meterContainer: {
     alignItems: 'center',
-    paddingVertical: spacing[8],
+    paddingVertical: spacing[6],
   },
   activityContainer: {
     alignItems: 'center',
@@ -398,8 +408,11 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     alignItems: 'center',
-    paddingBottom: spacing[10],
+    paddingTop: spacing[3],
+    paddingBottom: spacing[8],
     gap: spacing[3],
+    borderTopWidth: 1,
+    borderTopColor: semantic.border.subtle,
   },
   talkButton: {
     paddingVertical: spacing[4],

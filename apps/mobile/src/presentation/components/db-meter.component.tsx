@@ -46,20 +46,20 @@ export function DbMeter({ db }: DbMeterProps): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    gap: spacing[3],
+    gap: spacing[2],
     width: '100%',
   },
   dbValue: {
     fontFamily: typography.family.mono,
-    fontSize: typography.size.display,
+    fontSize: typography.size['4xl'],
     fontWeight: typography.weight.bold,
     letterSpacing: -2,
+    lineHeight: typography.size['4xl'] * 1.05,
   },
   dbLabel: {
     fontSize: typography.size.sm,
     color: semantic.text.muted,
     fontWeight: typography.weight.medium,
-    marginTop: -spacing[2],
   },
   track: {
     width: '100%',
@@ -67,6 +67,7 @@ const styles = StyleSheet.create({
     backgroundColor: semantic.bg.surface,
     borderRadius: 3,
     overflow: 'hidden',
+    marginTop: spacing[2],
   },
   bar: {
     height: '100%',
