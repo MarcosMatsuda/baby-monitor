@@ -153,27 +153,30 @@ export function MonitorScreen({
               </Text>
             </Pressable>
 
-            <View style={styles.bitrateGroup}>
-              {(['low', 'normal', 'high'] as const).map((preset) => (
-                <Pressable
-                  key={preset}
-                  onPress={() => onBitrateChange(preset)}
-                  style={({ pressed }) => [
-                    styles.bitrateChip,
-                    bitratePreset === preset && styles.chipActive,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      bitratePreset === preset && styles.chipTextActive,
+            <View style={styles.bitrateSection}>
+              <Text style={styles.controlGroupLabel}>Qualidade do vídeo</Text>
+              <View style={styles.bitrateGroup}>
+                {(['low', 'normal', 'high'] as const).map((preset) => (
+                  <Pressable
+                    key={preset}
+                    onPress={() => onBitrateChange(preset)}
+                    style={({ pressed }) => [
+                      styles.bitrateChip,
+                      bitratePreset === preset && styles.chipActive,
+                      pressed && styles.pressed,
                     ]}
                   >
-                    {BITRATE_LABELS[preset]}
-                  </Text>
-                </Pressable>
-              ))}
+                    <Text
+                      style={[
+                        styles.chipText,
+                        bitratePreset === preset && styles.chipTextActive,
+                      ]}
+                    >
+                      {BITRATE_LABELS[preset]}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
             </View>
           </View>
         )}
@@ -327,9 +330,9 @@ const styles = StyleSheet.create({
   videoControls: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     marginBottom: spacing[4],
-    gap: spacing[2],
+    gap: spacing[4],
   },
   chip: {
     paddingVertical: spacing[2],
@@ -337,6 +340,17 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: semantic.text.muted,
+  },
+  bitrateSection: {
+    alignItems: 'flex-end',
+    gap: spacing[1],
+  },
+  controlGroupLabel: {
+    fontSize: typography.size.xs,
+    color: semantic.text.muted,
+    fontWeight: typography.weight.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   bitrateGroup: {
     flexDirection: 'row',
